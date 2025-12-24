@@ -1,81 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - E-commerce System</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>تسجيل الدخول - نظام المتجر الإلكتروني</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* ستايل سريع لضمان ظهور الصفحة بشكل لائق */
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #f8f9fa;
             height: 100vh;
-            background-color: #f4f4f4;
-            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .login-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .login-card {
             width: 100%;
             max-width: 400px;
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        .message {
-            margin-top: 15px;
-            text-align: center;
-            font-size: 14px;
+            padding: 20px;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="login-container">
-        <h2>Login</h2>
-        <form id="loginForm">
-            <input type="email" id="email" placeholder="Email Address" required>
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        <div id="responseMessage" class="message"></div>
-        <p style="text-align: center;">Don't have an account? <a href="register.html">Register here</a></p>
+    <div class="container d-flex justify-content-center">
+        <div class="card login-card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">تسجيل الدخول</h2>
+
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" id="email" class="form-control" placeholder="example@mail.com" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">كلمة المرور</label>
+                        <input type="password" id="password" class="form-control" placeholder="********" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">دخول</button>
+                    </div>
+                </form>
+
+                <div id="responseMessage" class="mt-3 text-center fw-bold"></div>
+
+                <hr>
+                <p class="text-center mb-0">ليس لديك حساب؟ <a href="register.html" class="text-decoration-none">سجل
+                        الآن</a></p>
+            </div>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -85,30 +65,32 @@
             const password = document.getElementById('password').value;
             const responseMessage = document.getElementById('responseMessage');
 
+            // تنظيف الرسالة السابقة
+            responseMessage.innerText = "";
+
             try {
                 const response = await fetch('../backend/login_api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    // تأكد من وجود علامات ` في بداية ونهاية السطر التالي
                     body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
                 });
 
-                // التأكد من أن الرد نصي قبل تحويله لـ JSON لتجنب خطأ التحويل
                 const text = await response.text();
                 const result = JSON.parse(text);
 
                 if (result.status === 'success') {
-                    responseMessage.style.color = 'green';
-                    responseMessage.innerText = "Login Successful! Redirecting...";
+                    responseMessage.className = "mt-3 text-center fw-bold text-success";
+                    responseMessage.innerText = "تم تسجيل الدخول بنجاح! جاري التحويل...";
+
                     localStorage.setItem('user_token', result.token);
                     setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
                 } else {
-                    responseMessage.style.color = 'red';
+                    responseMessage.className = "mt-3 text-center fw-bold text-danger";
                     responseMessage.innerText = result.message;
                 }
             } catch (error) {
-                responseMessage.style.color = 'red';
-                responseMessage.innerText = "Error: " + error.message;
+                responseMessage.className = "mt-3 text-center fw-bold text-danger";
+                responseMessage.innerText = "حدث خطأ: " + error.message;
             }
         });
     </script>
