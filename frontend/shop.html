@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المتجر الإلكتروني - تصفح المنتجات</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -9,30 +11,35 @@
             transition: transform 0.3s;
             border: none;
             border-radius: 15px;
+            overflow: hidden;
         }
+
         .product-card:hover {
             transform: translateY(-5px);
         }
+
         .product-img {
             height: 200px;
             object-fit: cover;
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
         }
+
         .badge-category {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             color: #333;
+            z-index: 10;
         }
     </style>
     <script>
+        // التحقق من تسجيل الدخول قبل تحميل الصفحة
         if (!localStorage.getItem('user_token')) {
             window.location.href = 'login.html';
         }
     </script>
 </head>
+
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
         <div class="container">
@@ -53,60 +60,78 @@
         <div id="productsContainer" class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
             <div class="col-12 text-center">
                 <div class="spinner-border text-primary" role="status"></div>
-                <p>جاري تحميل المنتجات...</p>
+                <p class="mt-2">جاري تحميل المنتجات...</p>
             </div>
         </div>
     </div>
 
     <script>
-        // دالة جلب المنتجات وعرضها
+        // دالة جلب المنتجات من السيرفر وعرضها
         async function fetchShopProducts() {
             try {
                 const response = await fetch('../backend/get_products.php');
+
+                // التأكد من نجاح الطلب
+                if (!response.ok) throw new Error('فشل الاتصال بالسيرفر');
+
                 const products = await response.json();
-                
                 const container = document.getElementById('productsContainer');
-                container.innerHTML = ''; // تفريغ الحاوية
 
                 if (products.length === 0) {
                     container.innerHTML = '<div class="col-12 text-center"><p class="alert alert-warning">لا توجد منتجات معروضة حالياً.</p></div>';
                     return;
                 }
 
+                let productsHTML = ''; // تجميع الكود هنا لتحسين الأداء
+
                 products.forEach(prod => {
-                    // تحديد مسار الصورة
-                    const imgPath = prod.image_url ? ../backend/${prod.image_url} : 'https://via.placeholder.com/300x200?text=No+Image';
-                    
-                    container.innerHTML += `
+                    // تصحيح صياغة مسار الصورة باستخدام ` (Backticks)
+                    const imgPath = prod.image_url ? `../backend/${prod.image_url}` : 'https://via.placeholder.com/300x200?text=No+Image';
+
+                    productsHTML += `
                         <div class="col">
                             <div class="card h-100 shadow-sm product-card">
-                                <span class="badge badge-category shadow-sm">${prod.category_name}</span>
+                                <span class="badge badge-category shadow-sm">${prod.category_name || 'عام'}</span>
                                 <img src="${imgPath}" class="card-img-top product-img" alt="${prod.name}">
-                                <div class="card-body text-center">
+                                <div class="card-body text-center d-flex flex-column">
                                     <h5 class="card-title fw-bold">${prod.name}</h5>
                                     <p class="card-text text-muted small text-truncate">${prod.description || 'لا يوجد وصف'}</p>
-                                    <div class="d-flex justify-content-between align-items-center mt-3">
-                                        <span class="text-primary fw-bold h5 mb-0">$${prod.price}</span>
-                                        <button class="btn btn-sm btn-success">إضافة للسلة 🛒</button>
+                                    <div class="mt-auto">
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <span class="text-primary fw-bold h5 mb-0">$${prod.price}</span>
+                                            <button class="btn btn-sm btn-success" onclick="addToCart(${prod.id})">إضافة للسلة 🛒</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     `;
                 });
+
+                container.innerHTML = productsHTML;
             } catch (error) {
                 console.error("Error fetching products:", error);
-                document.getElementById('productsContainer').innerHTML = '<p class="text-danger text-center">حدث خطأ أثناء تحميل البيانات.</p>';
+                document.getElementById('productsContainer').innerHTML =
+                    '<div class="col-12 text-center"><p class="alert alert-danger">حدث خطأ أثناء تحميل البيانات. تأكد من اتصال السيرفر.</p></div>';
             }
         }
 
+        // دالة تسجيل الخروج
         function logout() {
             localStorage.removeItem('user_token');
             window.location.href = 'login.html';
         }
 
-        // تشغيل الجلب عند تحميل الصفحة
+        // دالة تجريبية للإضافة للسلة
+        function addToCart(productId) {
+            alert('تم إضافة المنتج رقم ' + productId + ' إلى السلة!');
+        }
+
+        // تشغيل الجلب عند تحميل الصفحة بالكامل
         document.addEventListener('DOMContentLoaded', fetchShopProducts);
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
