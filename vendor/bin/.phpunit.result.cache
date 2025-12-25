@@ -1,0 +1,1 @@
+{"version":2,"defects":[],"times":{"ProductTest::testProductPriceCannotBeNegative":0.009,"ProductTest::testProductNameIsRequired":0,"ProductTest::testPasswordHashing":0.125,"DatabaseIntegrationTest::testDatabaseInsertAndSelect":0.199}}

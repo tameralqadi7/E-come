@@ -4,70 +4,65 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-require_once 'config/Database.php';
-require_once 'config/JWTHandler.php';
+require_once 'Database.php';
+require_once 'JWTHandler.php';
+require_once 'ProductRepository.php'; // الملف الجديد
+require_once 'AuthStrategy.php';      // الملف الجديد
 
 $database = new Database();
 $db = $database->getConnection();
 $jwt = new JWTHandler();
 
-// 1. التحقق من التوكن وصلاحية الأدمن
+// 1. تطبيق الـ Strategy Pattern للتحقق من الصلاحيات
 $headers = getallheaders();
 $token = $headers['Authorization'] ?? '';
-$userData = $jwt->decodeToken($token);
 
-if (!$userData || $userData['role'] !== 'Admin') {
+// نختار "إستراتيجية الأدمن" للتحقق
+$authContext = new AuthContext(new AdminAuth($jwt)); 
+if (!$authContext->authenticate($token)) {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "Unauthorized access"]);
     exit;
 }
 
-// 2. استقبال البيانات (هنا نستخدم $_POST لأننا نرسل صوراً)
+// 2. إعداد الـ Repository للتعامل مع قاعدة البيانات
+$productRepo = new ProductRepository($db);
+
+// 3. استقبال البيانات
 $action = $_POST['action'] ?? '';
-$name = $_POST['name'] ?? '';
-$description = $_POST['description'] ?? '';
-$price = $_POST['price'] ?? '';
-$category_id = $_POST['category_id'] ?? '';
 $product_id = $_POST['id'] ?? null;
 
-// 3. منطق التعامل مع الصورة (Upload Logic)
+// 4. منطق الصورة (نفسه لم يتغير لأنه منطق رفع ملفات)
 $image_path = "";
 if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
     $target_dir = "uploads/products/";
-    if (!file_exists($target_dir)) {
-        mkdir($target_dir, 0777, true); // إنشاء المجلد إذا لم يكن موجوداً
-    }
-    
+    if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
     $file_name = time() . "_" . basename($_FILES["image"]["name"]);
     $target_file = $target_dir . $file_name;
-    
     if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
         $image_path = $target_file;
     }
 }
 
-// 4. تنفيذ العمليات (Create / Update / Delete)
+// 5. تنفيذ العمليات باستخدام الـ Repository
 switch ($action) {
     case 'create':
-        $query = "INSERT INTO products (name, description, price, category_id, image_url) 
-                  VALUES (:name, :description, :price, :category_id, :image)";
-        $stmt = $db->prepare($query);
-        $stmt->execute([
-            ':name' => $name,
-            ':description' => $description,
-            ':price' => $price,
-            ':category_id' => $category_id,
-            ':image' => $image_path
-        ]);
-        echo json_encode(["status" => "success", "message" => "Product added successfully"]);
+        $data = [
+            'name' => $_POST['name'] ?? '',
+            'description' => $_POST['description'] ?? '',
+            'price' => $_POST['price'] ?? '',
+            'category_id' => $_POST['category_id'] ?? '',
+            'image_url' => $image_path
+        ];
+        
+        if ($productRepo->create($data)) {
+            echo json_encode(["status" => "success", "message" => "Product added via Repository!"]);
+        }
         break;
 
     case 'delete':
-        if ($product_id) {
-            $query = "DELETE FROM products WHERE id = :id";
-            $stmt = $db->prepare($query);
-            $stmt->execute([':id' => $product_id]);
-            echo json_encode(["status" => "success", "message" => "Product deleted"]);
+        if ($product_id && $productRepo->delete($product_id)) {
+            echo json_encode(["status" => "success", "message" => "Product deleted via Repository!"]);
         }
         break;
 

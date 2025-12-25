@@ -1,7 +1,17 @@
 FROM php:8.2-apache
-# تثبيت إضافات PDO لتمكين PHP من الاتصال بـ MySQL
+
+# تثبيت الإضافات اللازمة لـ PHP وقاعدة البيانات
 RUN docker-php-ext-install pdo pdo_mysql
-# تفعيل خاصية rewrite لـ Apache (مهمة للـ API و Routing)
+
+# تثبيت الأدوات اللازمة لـ Composer (git, unzip)
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip
+
+# تثبيت Composer رسمياً داخل الحاوية
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# تفعيل خاصية الـ Rewrite لـ Apache
 RUN a2enmod rewrite
-# تحديد مكان الكود داخل الحاوية
+
 WORKDIR /var/www/html
