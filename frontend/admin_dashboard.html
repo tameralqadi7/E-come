@@ -33,19 +33,137 @@
         </div>
     </nav>
 
-    <div class="container text-center mt-5">
-        <div class="card p-5 shadow-sm">
+    <div class="container mt-5">
+        <div class="card p-4 shadow-sm text-center mb-4">
             <h2 id="welcomeMsg">أهلاً بك في نظام الإدارة</h2>
-            <p class="text-muted">يمكنك هنا البدء بإضافة المنتجات والتحكم بالمتجر.</p>
+            <p class="text-muted">يمكنك هنا إدارة الأصناف والمنتجات والتحكم بالمتجر.</p>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">إدارة تصنيفات المنتجات (Categories)</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-4">
+                    <input type="hidden" id="categoryId"> <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم الصنف...">
+                    <button id="btnSave" class="btn btn-success" onclick="saveCategory()">إضافة صنف</button>
+                    <button id="btnCancel" class="btn btn-secondary d-none" onclick="resetForm()">إلغاء</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>اسم الصنف</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         // [كود المهمة الثانية: وظيفة تسجيل الخروج]
         function logout() {
-            localStorage.removeItem('user_token'); // حذف الهوية من المتصفح
-            window.location.href = 'login.html';    // العودة لصفحة الدخول
+            localStorage.removeItem('user_token'); 
+            window.location.href = 'login.html';
         }
+
+        // [كود المهمة الثالثة: الربط مع الباك إند]
+
+        // 1. دالة لجلب البيانات من get_categories.php وعرضها
+        async function loadCategories() {
+            try {
+                const response = await fetch('../backend/get_categories.php');
+                const categories = await response.json();
+                
+                const tableBody = document.getElementById('categoriesTableBody');
+                tableBody.innerHTML = '';
+
+                categories.forEach((cat, index) => {
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${cat.name}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="prepareUpdate(${cat.id}, '${cat.name}')">تعديل</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteCategory(${cat.id})">حذف</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("خطأ في جلب الأصناف:", error);
+            }
+        }
+
+        // 2. دالة حفظ الصنف (تتعامل مع إضافة أو تعديل في ملف manage_categories.php)
+        async function saveCategory() {
+            const id = document.getElementById('categoryId').value;
+            const name = document.getElementById('categoryName').value;
+            const action = id ? 'update' : 'create';
+
+            if (!name) { alert("الرجاء إدخال اسم الصنف"); return; }
+
+            const response = await fetch('../backend/manage_categories.php', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': localStorage.getItem('user_token') 
+                },
+                body: JSON.stringify({ action: action, id: id, name: name })
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                resetForm();
+                loadCategories(); // تحديث الجدول فوراً
+            } else {
+                alert(result.message);
+            }
+        }
+
+        // 3. دالة الحذف
+        async function deleteCategory(id) {
+            if (confirm('هل أنت متأكد من حذف هذا الصنف؟')) {
+                const response = await fetch('../backend/manage_categories.php', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': localStorage.getItem('user_token') 
+                    },
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+                const result = await response.json();
+                if (result.status === 'success') { 
+                    loadCategories(); 
+                }
+            }
+        }
+
+        // وظائف تحسين الواجهة (تعديل وإلغاء)
+        function prepareUpdate(id, name) {
+            document.getElementById('categoryId').value = id;
+            document.getElementById('categoryName').value = name;
+            document.getElementById('btnSave').innerText = 'حفظ التعديل';
+            document.getElementById('btnSave').className = 'btn btn-warning';
+            document.getElementById('btnCancel').classList.remove('d-none');
+        }
+
+        function resetForm() {
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryName').value = '';
+            document.getElementById('btnSave').innerText = 'إضافة صنف';
+            document.getElementById('btnSave').className = 'btn btn-success';
+            document.getElementById('btnCancel').classList.add('d-none');
+        }
+
+        // تشغيل الجلب فور فتح الصفحة
+        document.addEventListener('DOMContentLoaded', loadCategories);
     </script>
 </body>
 </html>
