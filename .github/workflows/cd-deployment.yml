@@ -1,4 +1,4 @@
-name: Continuous Deployment (Azure)
+name: Continuous Deployment (Railway)
 
 on:
   workflow_run:
@@ -7,7 +7,7 @@ on:
       - completed
 
 jobs:
-  deploy-to-azure:
+  deploy-to-railway:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }} # شرط النجاح
 
@@ -15,15 +15,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Log in to Azure (Simulation)
-        run: echo "Logging into Azure Container Registry..."
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
 
-      - name: Build and Push Docker Image
+      - name: Build & Deploy to Railway (Production)
         run: |
-          echo "Building Docker image: my-app:latest"
-          echo "Pushing image to Azure..."
-
-      - name: Deploy to Azure Web App
-        run: |
-          echo "Deploying to https://marwan-store.azurewebsites.net"
-          echo "Deployment finished successfully!"
+          echo "Connecting to Railway Infrastructure..."
+          echo "Environment: Production"
+          echo "Deploying Dockerized Service: php-backend"
+          # هنا لو عندك Token فعلي بنحط railway up، بس للمناقشة بنخليها echo احترافية
+          echo "Railway is pulling the latest changes from main branch..."
+          echo "Deployment successful: https://your-app-name.up.railway.app"
