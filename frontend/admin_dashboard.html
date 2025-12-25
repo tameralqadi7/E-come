@@ -12,7 +12,6 @@
             window.location.href = 'login.html';
         } else {
             try {
-                // فك التوكن وقراءة الـ Role
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 if (payload.role !== 'Admin') {
                     alert("غير مسموح لك بالدخول، سيتم توجيهك للمتجر.");
@@ -33,19 +32,52 @@
         </div>
     </nav>
 
-    <div class="container text-center mt-5">
-        <div class="card p-5 shadow-sm">
+    <div class="container mt-5">
+        <div class="card p-4 shadow-sm text-center mb-4">
             <h2 id="welcomeMsg">أهلاً بك في نظام الإدارة</h2>
-            <p class="text-muted">يمكنك هنا البدء بإضافة المنتجات والتحكم بالمتجر.</p>
+            <p class="text-muted">يمكنك هنا إدارة الأصناف والمنتجات والتحكم بالمتجر.</p>
         </div>
-    </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">إدارة تصنيفات المنتجات (Categories)</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-4">
+                    <input type="hidden" id="categoryId"> 
+                    <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم الصنف...">
+                    <button id="btnSave" class="btn btn-success">إضافة صنف</button>
+                    <button id="btnCancel" class="btn btn-secondary d-none">إلغاء</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>اسم الصنف</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody">
+                            <tr>
+                                <td colspan="3" class="text-muted">بانتظار تفعيل المهمة الرابعة لجلب البيانات...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        </div>
 
     <script>
-        // [كود المهمة الثانية: وظيفة تسجيل الخروج]
+        // [كود المهمة الثانية: تسجيل الخروج]
         function logout() {
-            localStorage.removeItem('user_token'); // حذف الهوية من المتصفح
-            window.location.href = 'login.html';    // العودة لصفحة الدخول
+            localStorage.removeItem('user_token'); 
+            window.location.href = 'login.html';
         }
+
+        // ملاحظة: تم إزالة دوال الـ fetch و loadCategories بناءً على طلبك (المهمة الرابعة)
     </script>
 </body>
 </html>
