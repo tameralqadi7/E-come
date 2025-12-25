@@ -5,7 +5,7 @@ services:
   php-server:
     build: .
     ports:
-      - "8080:80"
+      - "9090:80"
     volumes:
       - .:/var/www/html
     depends_on:
