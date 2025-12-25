@@ -33,4 +33,6 @@ jobs:
       run: composer install
 
     - name: Run Unit & Integration Tests
-      run: ./vendor/bin/phpunit tests
+      run: |
+        chmod +x ./vendor/bin/phpunit
+        ./vendor/bin/phpunit tests
