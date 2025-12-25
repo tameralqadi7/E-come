@@ -1,0 +1,29 @@
+name: Continuous Deployment (Azure)
+
+on:
+  workflow_run:
+    workflows: ["PHP Project CI"] # لن يبدأ إلا بعد نجاح الـ CI
+    types:
+      - completed
+
+jobs:
+  deploy-to-azure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} # شرط النجاح
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to Azure (Simulation)
+        run: echo "Logging into Azure Container Registry..."
+
+      - name: Build and Push Docker Image
+        run: |
+          echo "Building Docker image: my-app:latest"
+          echo "Pushing image to Azure..."
+
+      - name: Deploy to Azure Web App
+        run: |
+          echo "Deploying to https://marwan-store.azurewebsites.net"
+          echo "Deployment finished successfully!"
