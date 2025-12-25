@@ -4,8 +4,8 @@ header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
-require_once 'config/Database.php';
-require_once 'config/JWTHandler.php';
+require_once 'Database.php';
+require_once 'JWTHandler.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'] ?? '';
