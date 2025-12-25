@@ -39,13 +39,14 @@
             <p class="text-muted">يمكنك هنا إدارة الأصناف والمنتجات والتحكم بالمتجر.</p>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm mb-5">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">إدارة تصنيفات المنتجات (Categories)</h5>
             </div>
             <div class="card-body">
                 <div class="input-group mb-4">
-                    <input type="hidden" id="categoryId"> <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم الصنف...">
+                    <input type="hidden" id="categoryId"> 
+                    <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم الصنف...">
                     <button id="btnSave" class="btn btn-success" onclick="saveCategory()">إضافة صنف</button>
                     <button id="btnCancel" class="btn btn-secondary d-none" onclick="resetForm()">إلغاء</button>
                 </div>
@@ -59,8 +60,63 @@
                                 <th>الإجراءات</th>
                             </tr>
                         </thead>
-                        <tbody id="categoriesTableBody">
-                            </tbody>
+                        <tbody id="categoriesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="card shadow-sm mt-5 mb-5">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">إدارة المنتجات (Products)</h5>
+            </div>
+            <div class="card-body">
+                <form id="productForm" class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">اسم المنتج</label>
+                        <input type="text" id="pName" class="form-control" placeholder="مثلاً: iPhone 15" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">السعر ($)</label>
+                        <input type="number" id="pPrice" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">الصنف</label>
+                        <select id="pCategory" class="form-select" required>
+                            <option value="">اختر صنفاً...</option>
+                            </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">وصف المنتج</label>
+                        <textarea id="pDescription" class="form-control" rows="2" placeholder="اكتب تفاصيل المنتج هنا..."></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">صورة المنتج</label>
+                        <input type="file" id="pImage" class="form-control" accept="image/*">
+                    </div>
+                    <div class="col-md-12 text-end mt-4">
+                        <button type="button" class="btn btn-primary px-5" onclick="saveProduct()">إضافة منتج جديد</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered text-center align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>الصورة</th>
+                                <th>اسم المنتج</th>
+                                <th>الصنف</th>
+                                <th>السعر</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <tr>
+                                <td colspan="5" class="text-muted">بانتظار تفعيل المهمة الرابعة لعرض المنتجات...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -74,18 +130,22 @@
             window.location.href = 'login.html';
         }
 
-        // [كود المهمة الثالثة: الربط مع الباك إند]
+        // --- [أكواد إدارة الأصناف - Epic 2] ---
 
-        // 1. دالة لجلب البيانات من get_categories.php وعرضها
         async function loadCategories() {
             try {
                 const response = await fetch('../backend/get_categories.php');
                 const categories = await response.json();
                 
                 const tableBody = document.getElementById('categoriesTableBody');
+                const pCategorySelect = document.getElementById('pCategory'); // القائمة المنسدلة للمنتجات
+                
                 tableBody.innerHTML = '';
+                // تفريغ القائمة المنسدلة مع الإبقاء على الخيار الأول
+                pCategorySelect.innerHTML = '<option value="">اختر صنفاً...</option>';
 
                 categories.forEach((cat, index) => {
+                    // تعبئة الجدول
                     tableBody.innerHTML += `
                         <tr>
                             <td>${index + 1}</td>
@@ -95,13 +155,15 @@
                                 <button class="btn btn-sm btn-danger" onclick="deleteCategory(${cat.id})">حذف</button>
                             </td>
                         </tr>`;
+                    
+                    // تعبئة قائمة اختيار الصنف في فورم المنتجات
+                    pCategorySelect.innerHTML += <option value="${cat.id}">${cat.name}</option>;
                 });
             } catch (error) {
                 console.error("خطأ في جلب الأصناف:", error);
             }
         }
 
-        // 2. دالة حفظ الصنف (تتعامل مع إضافة أو تعديل في ملف manage_categories.php)
         async function saveCategory() {
             const id = document.getElementById('categoryId').value;
             const name = document.getElementById('categoryName').value;
@@ -121,13 +183,12 @@
             const result = await response.json();
             if (result.status === 'success') {
                 resetForm();
-                loadCategories(); // تحديث الجدول فوراً
+                loadCategories();
             } else {
                 alert(result.message);
             }
         }
 
-        // 3. دالة الحذف
         async function deleteCategory(id) {
             if (confirm('هل أنت متأكد من حذف هذا الصنف؟')) {
                 const response = await fetch('../backend/manage_categories.php', {
@@ -139,13 +200,10 @@
                     body: JSON.stringify({ action: 'delete', id: id })
                 });
                 const result = await response.json();
-                if (result.status === 'success') { 
-                    loadCategories(); 
-                }
+                if (result.status === 'success') { loadCategories(); }
             }
         }
 
-        // وظائف تحسين الواجهة (تعديل وإلغاء)
         function prepareUpdate(id, name) {
             document.getElementById('categoryId').value = id;
             document.getElementById('categoryName').value = name;
@@ -160,6 +218,13 @@
             document.getElementById('btnSave').innerText = 'إضافة صنف';
             document.getElementById('btnSave').className = 'btn btn-success';
             document.getElementById('btnCancel').classList.add('d-none');
+        }
+
+        // --- [أكواد إدارة المنتجات - Epic 3] ---
+        // سيتم إضافة دوال loadProducts و saveProduct الفعلية في المهمة الرابعة (Integration)
+
+        function saveProduct() {
+            alert("هذه الوظيفة سيتم ربطها في المهمة الرابعة (Integration)");
         }
 
         // تشغيل الجلب فور فتح الصفحة
