@@ -1,6 +1,7 @@
 <?php
 // backend/strategies/EmailVerification.php
 require_once 'VerificationStrategy.php';
+
 // تأكد من تحميل مكتبة PHPMailer عبر Composer
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -14,23 +15,33 @@ class EmailVerification implements VerificationStrategy {
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com'; 
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'your-email@gmail.com'; // إيميلك
-            $mail->Password   = 'your-app-password';    // كلمة سر التطبيق
+            
+            // سحب البيانات من متغيرات البيئة في Render لضمان الأمان
+            $mail->Username   = getenv('EMAIL_USER'); // إيميلك الحقيقي المضاف في Render
+            $mail->Password   = getenv('EMAIL_PASS'); // App Password المكون من 16 حرفاً
+            
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
 
-            // المستلم
-            $mail->setFrom('your-email@gmail.com', 'Ecommerce Store');
+            // المستلم والمرسل
+            $mail->setFrom(getenv('EMAIL_USER'), 'Ecommerce Store');
             $mail->addAddress($contact); 
 
             // محتوى الإيميل
             $mail->isHTML(true);
             $mail->Subject = 'Verification Code';
-            $mail->Body    = "Your verification code is: <b>" . rand(1000, 9999) . "</b>";
+            
+            // توليد كود عشوائي
+            $verification_code = rand(1000, 9999);
+            $mail->Body = "Your verification code is: <b>" . $verification_code . "</b>";
 
-            $mail->send();
-            return "تم إرسال كود التفعيل إلى الإيميل: " . $contact;
+            // إرسال الإيميل
+            if($mail->send()) {
+                return "تم إرسال كود التفعيل إلى الإيميل: " . $contact;
+            }
+            
         } catch (Exception $e) {
+            // في حال الفشل، يرجع رسالة الخطأ لتسهيل تتبعها في Render Logs
             return "فشل الإرسال: " . $mail->ErrorInfo;
         }
     }
