@@ -1,21 +1,21 @@
 FROM php:8.2-apache
 
-# تثبيت الإضافات اللازمة لـ PHP وقاعدة البيانات
+# 1. تثبيت الإضافات اللازمة لـ PHP وقاعدة البيانات
 RUN docker-php-ext-install pdo pdo_mysql
 
-# تثبيت الأدوات اللازمة لـ Composer
+# 2. تثبيت الأدوات اللازمة
 RUN apt-get update && apt-get install -y git unzip
 
-# تثبيت Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# 3. حل مشكلة MPM بشكل جذري: حذف ملفات الإعداد للموديلات الأخرى
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.load /etc/apache2/mods-enabled/mpm_worker.load || true
+RUN a2enmod mpm_prefork
 
-# حل مشكلة الـ MPM: تعطيل الموديلات المتعارضة وتفعيل mpm_prefork
-RUN a2dismod mpm_event mpm_worker || true && a2enmod mpm_prefork
-
-# تفعيل خاصية الـ Rewrite لـ Apache
+# 4. تفعيل خاصية الـ Rewrite
 RUN a2enmod rewrite
 
+# 5. ضبط مجلد العمل والصلاحيات
 WORKDIR /var/www/html
+COPY . .
 RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
