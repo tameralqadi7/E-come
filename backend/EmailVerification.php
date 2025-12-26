@@ -1,62 +1,55 @@
 <?php
-// backend/strategies/EmailVerification.php
-require_once 'VerificationStrategy.php';
+// backend/EmailVerification.php
 
-/**
- * استدعاء ملفات PHPMailer 7.0.1 يدوياً
- * المسار الصحيح: بما أننا في backend/strategies/
- * نخرج لمجلد backend ثم ندخل لمجلد PHPMailer
- */
-require_once __DIR__ . '/../PHPMailer/src/Exception.php';
-require_once __DIR__ . '/../PHPMailer/src/PHPMailer.php';
-require_once __DIR__ . '/../PHPMailer/src/SMTP.php';
+// 1. تحديد المسار المطلق لمجلد PHPMailer
+// بما أن الملف الحالي في backend/ ومجلد PHPMailer يفترض أن يكون في backend/PHPMailer/
+$phpmailer_base = __DIR__ . '/PHPMailer/src/';
+
+// 2. التحقق من وجود الملفات قبل استدعائها (لحمايتك من الـ Fatal Error)
+if (file_exists($phpmailer_base . 'Exception.php')) {
+    require_once $phpmailer_base . 'Exception.php';
+    require_once $phpmailer_base . 'PHPMailer.php';
+    require_once $phpmailer_base . 'SMTP.php';
+} else {
+    // إذا لم يجدها، سيعطيك رسالة واضحة في الـ Logs لتخبرني بها
+    error_log("CRITICAL ERROR: PHPMailer folder not found at: " . $phpmailer_base);
+    die("Error: PHPMailer files are missing. Please check folder structure.");
+}
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// تعريف الـ Interface إذا لم يكن مستدعى
+if (!interface_exists('VerificationStrategy')) {
+    require_once 'VerificationStrategy.php';
+}
+
 class EmailVerification implements VerificationStrategy {
     public function sendCode($contact) {
         $mail = new PHPMailer(true);
-
         try {
-            // إعدادات السيرفر
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com'; 
             $mail->SMTPAuth   = true;
-            
-            // جلب البيانات من Environment Variables في Render
             $mail->Username   = getenv('EMAIL_USER'); 
             $mail->Password   = getenv('EMAIL_PASS'); 
-            
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
             $mail->CharSet    = 'UTF-8';
 
-            // المستلم
             $mail->setFrom($mail->Username, 'Ecommerce Store');
             $mail->addAddress($contact); 
-
-            // المحتوى
             $mail->isHTML(true);
             $mail->Subject = 'كود تفعيل الحساب';
             
             $verification_code = rand(1000, 9999);
-            $mail->Body = "
-                <div style='direction: rtl; font-family: tahoma; border: 1px solid #ddd; padding: 20px; border-radius: 10px;'>
-                    <h2 style='color: #333;'>مرحباً بك في متجرنا</h2>
-                    <p>شكراً لتسجيلك. كود التفعيل الخاص بك هو:</p>
-                    <h1 style='color: #4CAF50; background: #f9f9f9; display: inline-block; padding: 10px 20px; border-radius: 5px;'> " . $verification_code . " </h1>
-                    <p style='font-size: 12px; color: #777;'>إذا لم تطلب هذا الكود، يرجى تجاهل الرسالة.</p>
-                </div>";
+            $mail->Body = "كود التفعيل الخاص بك هو: <b>" . $verification_code . "</b>";
 
             if($mail->send()) {
                 if (session_status() == PHP_SESSION_NONE) { session_start(); }
                 $_SESSION['verification_code'] = $verification_code;
-                $_SESSION['email_temp'] = $contact;
-                
                 return "success"; 
             }
-            
         } catch (Exception $e) {
             error_log("Mail Error: " . $mail->ErrorInfo);
             return "فشل الإرسال: " . $mail->ErrorInfo;
