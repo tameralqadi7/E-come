@@ -4,8 +4,8 @@ require_once 'VerificationStrategy.php';
 
 /**
  * استدعاء ملفات PHPMailer 7.0.1 يدوياً
- * بما أن الملف الحالي في backend/strategies/
- * فنحن نخرج خطوة واحدة لنجد مجلد PHPMailer
+ * المسار الصحيح: بما أننا في backend/strategies/
+ * نخرج لمجلد backend ثم ندخل لمجلد PHPMailer
  */
 require_once __DIR__ . '/../PHPMailer/src/Exception.php';
 require_once __DIR__ . '/../PHPMailer/src/PHPMailer.php';
@@ -50,7 +50,6 @@ class EmailVerification implements VerificationStrategy {
                 </div>";
 
             if($mail->send()) {
-                // تخزين الكود في الجلسة
                 if (session_status() == PHP_SESSION_NONE) { session_start(); }
                 $_SESSION['verification_code'] = $verification_code;
                 $_SESSION['email_temp'] = $contact;
