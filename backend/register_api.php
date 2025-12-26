@@ -7,9 +7,9 @@ header("Access-Control-Allow-Methods: POST");
 // 1. استدعاء كل الملفات التي أنشأناها
 require_once 'Database.php';
 require_once 'JWTHandler.php';
-require_once 'strategies/VerificationManager.php';
-require_once 'strategies/EmailVerification.php';
-require_once 'strategies/WhatsappVerification.php';
+require_once 'VerificationManager.php';
+require_once 'EmailVerification.php';
+require_once 'WhatsappVerification.php';
 
 // 2. التحقق من أن الطلب هو POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
