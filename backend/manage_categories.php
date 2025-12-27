@@ -1,92 +1,64 @@
 <?php
-// 1. منع ظهور أخطاء نصية تفسد الـ JSON
-error_reporting(0);
-ini_set('display_errors', 0);
+// 1. إعدادات البيئة
+error_reporting(E_ALL); // سنفعل الأخطاء الآن لنعرف السبب
+ini_set('display_errors', 1);
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-// التعامل مع طلبات OPTIONS (Preflight) التي يرسلها المتصفح أحياناً
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
+
+// 2. فحص وجود الملفات قبل تحميلها (لتجنب انهيار السيرفر)
+$db_file = __DIR__ . '/Database.php';
+$jwt_file = __DIR__ . '/JWTHandler.php';
+
+if (!file_exists($db_file)) {
+    die(json_encode(["status" => "error", "message" => "ملف Database.php غير موجود في: " . $db_file]));
+}
+if (!file_exists($jwt_file)) {
+    die(json_encode(["status" => "error", "message" => "ملف JWTHandler.php غير موجود في: " . $jwt_file]));
 }
 
-// 2. استخدام المسار المطلق للملفات المطلوبة
-require_once __DIR__ . 'Database.php';
-require_once __DIR__ . '/JWTHandler.php';
+require_once $db_file;
+require_once $jwt_file;
 
 try {
     $database = new Database();
     $db = $database->getConnection();
     $jwt = new JWTHandler();
 
-    // 3. التحقق من الهوية (Admin Only)
+    // 3. معالجة التوكن
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
-    
-    // تنظيف التوكن في حال وجود كلمة Bearer
     $token = str_replace('Bearer ', '', $authHeader);
     
     $userData = $jwt->decodeToken($token);
 
-    // التحقق من الرتبة (تأكد أن الحرف A كبير كما في قاعدة بياناتك)
-    if (!$userData || $userData['role'] !== 'Admin') {
+    // فحص الصلاحية (Admin)
+    if (!$userData || strtolower($userData['role']) !== 'admin') {
         http_response_code(403);
-        echo json_encode(["status" => "error", "message" => "Unauthorized: Admin access required"]);
+        echo json_encode(["status" => "error", "message" => "صلاحيات غير كافية أو جلسة منتهية"]);
         exit;
     }
 
-    // 4. استقبال البيانات
+    // 4. تنفيذ الإضافة
     $data = json_decode(file_get_contents("php://input"));
-    $action = $data->action ?? '';
-
-    switch ($action) {
-        case 'create':
-            if (!empty($data->name)) {
-                $query = "INSERT INTO categories (name) VALUES (:name)";
-                $stmt = $db->prepare($query);
-                $stmt->bindParam(':name', htmlspecialchars(strip_tags($data->name)));
-                if ($stmt->execute()) {
-                    echo json_encode(["status" => "success", "message" => "تم إضافة الصنف بنجاح"]);
-                } else {
-                    echo json_encode(["status" => "error", "message" => "فشل إدراج الصنف"]);
-                }
-            }
-            break;
-
-        case 'update':
-            if (!empty($data->id) && !empty($data->name)) {
-                $query = "UPDATE categories SET name = :name WHERE id = :id";
-                $stmt = $db->prepare($query);
-                $stmt->bindParam(':name', htmlspecialchars(strip_tags($data->name)));
-                $stmt->bindParam(':id', $data->id);
-                if ($stmt->execute()) {
-                    echo json_encode(["status" => "success", "message" => "تم تعديل الصنف"]);
-                }
-            }
-            break;
-
-        case 'delete':
-            if (!empty($data->id)) {
-                $query = "DELETE FROM categories WHERE id = :id";
-                $stmt = $db->prepare($query);
-                $stmt->bindParam(':id', $data->id);
-                if ($stmt->execute()) {
-                    echo json_encode(["status" => "success", "message" => "تم حذف الصنف"]);
-                }
-            }
-            break;
-
-        default:
-            echo json_encode(["status" => "error", "message" => "عملية غير صالحة"]);
-            break;
+    if (isset($data->action) && $data->action === 'create') {
+        $query = "INSERT INTO categories (name) VALUES (:name)";
+        $stmt = $db->prepare($query);
+        $name = htmlspecialchars(strip_tags($data->name));
+        $stmt->bindParam(':name', $name);
+        
+        if ($stmt->execute()) {
+            echo json_encode(["status" => "success", "message" => "تم إضافة الصنف بنجاح"]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "فشل تنفيذ الاستعلام في قاعدة البيانات"]);
+        }
     }
 
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "خطأ في السيرفر: " . $e->getMessage()]);
+    echo json_encode(["status" => "error", "message" => "حدث خطأ: " . $e->getMessage()]);
 }
-?>
