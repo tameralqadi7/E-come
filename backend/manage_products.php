@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 
 // 2. تصحيح المسارات المطلقة (Absolute Paths)
 $base_dir = __DIR__;
-require_once $base_dir . '/config/Database.php'; // تأكد من المسار حسب مجلدك
+require_once $base_dir . '/Database.php'; // تأكد من المسار حسب مجلدك
 require_once $base_dir . '/JWTHandler.php';
 require_once $base_dir . '/ProductRepository.php';
 require_once $base_dir . '/AuthStrategy.php';

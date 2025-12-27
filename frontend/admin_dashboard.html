@@ -7,15 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <script>
-        // [تطبيق المهمة الأولى: الحماية والتحقق من الرتبة]
+        // التحقق من الحماية والرتبة عند الدخول
         const token = localStorage.getItem('user_token');
         if (!token) {
             window.location.href = 'login.html';
         } else {
             try {
-                // فك التوكن وقراءة الـ Role
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.role !== 'Admin') {
+                // جعل التحقق مرن (Admin أو admin)
+                if (payload.role.toLowerCase() !== 'admin') {
                     alert("غير مسموح لك بالدخول، سيتم توجيهك للمتجر.");
                     window.location.href = 'shop.html';
                 }
@@ -27,10 +27,19 @@
     </script>
     <style>
         .product-img-preview {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             object-fit: cover;
-            border-radius: 5px;
+            border-radius: 8px;
+        }
+
+        .card {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .table img {
+            border: 1px solid #ddd;
         }
     </style>
 </head>
@@ -43,26 +52,25 @@
         </div>
     </nav>
 
-    <div class="container mt-5">
-        <div class="card p-4 shadow-sm text-center mb-4">
+    <div class="container">
+        <div class="card p-4 shadow-sm text-center mb-4 bg-white">
             <h2 id="welcomeMsg">أهلاً بك في نظام الإدارة</h2>
-            <p class="text-muted">يمكنك هنا إدارة الأصناف والمنتجات والتحكم بالمتجر.</p>
+            <p class="text-muted">إدارة التصنيفات والمنتجات من مكان واحد.</p>
         </div>
 
         <div class="card shadow-sm mb-5">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">إدارة تصنيفات المنتجات (Categories)</h5>
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0">إدارة تصنيفات المنتجات</h5>
             </div>
             <div class="card-body">
                 <div class="input-group mb-4">
                     <input type="hidden" id="categoryId">
-                    <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم الصنف...">
-                    <button id="btnSave" class="btn btn-success" onclick="saveCategory()">إضافة صنف</button>
+                    <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم الصنف الجديد...">
+                    <button id="btnSave" class="btn btn-success px-4" onclick="saveCategory()">إضافة صنف</button>
                     <button id="btnCancel" class="btn btn-secondary d-none" onclick="resetForm()">إلغاء</button>
                 </div>
-
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover text-center">
+                    <table class="table table-hover text-center align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th>#</th>
@@ -76,44 +84,45 @@
             </div>
         </div>
 
-        <hr>
-
-        <div class="card shadow-sm mt-5 mb-5">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">إدارة المنتجات (Products)</h5>
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-dark text-white py-3">
+                <h5 class="mb-0">إضافة منتج جديد</h5>
             </div>
             <div class="card-body">
-                <form id="productForm" class="row g-3 mb-4">
+                <form id="productForm" class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-bold">اسم المنتج</label>
-                        <input type="text" id="pName" class="form-control" placeholder="مثلاً: iPhone 15" required>
+                        <input type="text" id="pName" class="form-control" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">السعر ($)</label>
-                        <input type="number" id="pPrice" class="form-control" placeholder="0.00" required>
+                        <input type="number" id="pPrice" class="form-control" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">الصنف</label>
                         <select id="pCategory" class="form-select" required>
-                            <option value="">اختر صنفاً...</option>
+                            <option value="">تحميل الأصناف...</option>
                         </select>
                     </div>
                     <div class="col-md-12">
                         <label class="form-label fw-bold">وصف المنتج</label>
-                        <textarea id="pDescription" class="form-control" rows="2"
-                            placeholder="اكتب تفاصيل المنتج هنا..."></textarea>
+                        <textarea id="pDescription" class="form-control" rows="2"></textarea>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">صورة المنتج</label>
                         <input type="file" id="pImage" class="form-control" accept="image/*">
                     </div>
-                    <div class="col-md-12 text-end mt-4">
-                        <button type="button" class="btn btn-primary px-5" onclick="saveProduct()">حفظ المنتج</button>
+                    <div class="col-md-12 text-end">
+                        <button type="button" id="btnSaveProduct" class="btn btn-primary px-5"
+                            onclick="saveProduct()">حفظ المنتج</button>
                     </div>
                 </form>
 
+                <hr class="my-4">
+
+                <h5 class="mb-3">قائمة المنتجات الحالية</h5>
                 <div class="table-responsive">
-                    <table class="table table-hover table-bordered text-center align-middle">
+                    <table class="table table-hover border text-center align-middle">
                         <thead class="table-secondary">
                             <tr>
                                 <th>الصورة</th>
@@ -131,6 +140,13 @@
     </div>
 
     <script>
+        const API_BASE = '../backend';
+
+        function getAuthHeader() {
+            const token = localStorage.getItem('user_token');
+            return token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+        }
+
         function logout() {
             localStorage.removeItem('user_token');
             window.location.href = 'login.html';
@@ -139,9 +155,8 @@
         // --- إدارة الأصناف ---
         async function loadCategories() {
             try {
-                const response = await fetch('../backend/get_categories.php');
+                const response = await fetch(`${API_BASE}/get_categories.php`);
                 const categories = await response.json();
-
                 const tableBody = document.getElementById('categoriesTableBody');
                 const pCategorySelect = document.getElementById('pCategory');
 
@@ -158,13 +173,9 @@
                                 <button class="btn btn-sm btn-danger" onclick="deleteCategory(${cat.id})">حذف</button>
                             </td>
                         </tr>`;
-
-                    // تصحيح: إضافة علامات المائل العكسي هنا
                     pCategorySelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
                 });
-            } catch (error) {
-                console.error("خطأ في جلب الأصناف:", error);
-            }
+            } catch (e) { console.error("Error loading categories"); }
         }
 
         async function saveCategory() {
@@ -172,74 +183,35 @@
             const name = document.getElementById('categoryName').value;
             const action = id ? 'update' : 'create';
 
-            if (!name) { alert("الرجاء إدخال اسم الصنف"); return; }
+            if (!name) return alert("الاسم مطلوب");
 
-            const response = await fetch('../backend/manage_categories.php', {
+            const response = await fetch(`${API_BASE}/manage_categories.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': localStorage.getItem('user_token')
+                    'Authorization': getAuthHeader()
                 },
-                body: JSON.stringify({ action: action, id: id, name: name })
+                body: JSON.stringify({ action, id, name })
             });
 
             const result = await response.json();
-            if (result.status === 'success') {
-                resetForm();
-                loadCategories();
-            } else { alert(result.message); }
-        }
-
-        async function deleteCategory(id) {
-            if (confirm('هل أنت متأكد من حذف هذا الصنف؟')) {
-                const response = await fetch('../backend/manage_categories.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': localStorage.getItem('user_token')
-                    },
-                    body: JSON.stringify({ action: 'delete', id: id })
-                });
-                const result = await response.json();
-                if (result.status === 'success') { loadCategories(); }
-            }
-        }
-
-        function prepareUpdate(id, name) {
-            document.getElementById('categoryId').value = id;
-            document.getElementById('categoryName').value = name;
-            document.getElementById('btnSave').innerText = 'حفظ التعديل';
-            document.getElementById('btnSave').className = 'btn btn-warning';
-            document.getElementById('btnCancel').classList.remove('d-none');
-        }
-
-        function resetForm() {
-            document.getElementById('categoryId').value = '';
-            document.getElementById('categoryName').value = '';
-            document.getElementById('btnSave').innerText = 'إضافة صنف';
-            document.getElementById('btnSave').className = 'btn btn-success';
-            document.getElementById('btnCancel').classList.add('d-none');
+            if (result.status === 'success') { resetForm(); loadCategories(); }
+            else { alert(result.message); }
         }
 
         // --- إدارة المنتجات ---
         async function loadProducts() {
             try {
-                const response = await fetch('../backend/get_products.php');
+                const response = await fetch(`${API_BASE}/get_products.php`);
                 const products = await response.json();
                 const tableBody = document.getElementById('productsTableBody');
                 tableBody.innerHTML = '';
 
-                if (products.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="text-muted">لا يوجد منتجات حالياً</td></tr>';
-                    return;
-                }
-
                 products.forEach(prod => {
-                    // تصحيح: استخدام علامات المائل العكسي للمسار
-                    const imgPath = prod.image_url ? `../backend/${prod.image_url}` : 'https://via.placeholder.com/50';
+                    const imgPath = prod.image_url ? `${API_BASE}/${prod.image_url.replace('backend/', '')}` : 'https://via.placeholder.com/60';
                     tableBody.innerHTML += `
                         <tr>
-                            <td><img src="${imgPath}" class="product-img-preview border shadow-sm"></td>
+                            <td><img src="${imgPath}" class="product-img-preview border"></td>
                             <td><strong>${prod.name}</strong></td>
                             <td><span class="badge bg-info text-dark">${prod.category_name}</span></td>
                             <td>$${prod.price}</td>
@@ -248,62 +220,80 @@
                             </td>
                         </tr>`;
                 });
-            } catch (error) {
-                console.error("خطأ في تحميل المنتجات:", error);
-            }
+            } catch (e) { console.error("Error loading products"); }
         }
 
         async function saveProduct() {
-            const name = document.getElementById('pName').value;
-            const price = document.getElementById('pPrice').value;
-            const category_id = document.getElementById('pCategory').value;
-            const description = document.getElementById('pDescription').value;
-            const imageFile = document.getElementById('pImage').files[0];
-
-            if (!name || !price || !category_id) {
-                alert("يرجى ملء الحقول الأساسية (الاسم، السعر، الصنف)");
-                return;
-            }
+            const btn = document.getElementById('btnSaveProduct');
+            btn.disabled = true; // منع التكرار
+            btn.innerText = 'جاري الحفظ...';
 
             const formData = new FormData();
             formData.append('action', 'create');
-            formData.append('name', name);
-            formData.append('price', price);
-            formData.append('category_id', category_id);
-            formData.append('description', description);
+            formData.append('name', document.getElementById('pName').value);
+            formData.append('price', document.getElementById('pPrice').value);
+            formData.append('category_id', document.getElementById('pCategory').value);
+            formData.append('description', document.getElementById('pDescription').value);
+
+            const imageFile = document.getElementById('pImage').files[0];
             if (imageFile) formData.append('image', imageFile);
 
             try {
-                const response = await fetch('../backend/manage_products.php', {
+                const response = await fetch(`${API_BASE}/manage_products.php`, {
                     method: 'POST',
-                    headers: { 'Authorization': localStorage.getItem('user_token') },
+                    headers: { 'Authorization': getAuthHeader() },
                     body: formData
                 });
+
+                if (!response.ok) {
+                    const errorMsg = await response.text();
+                    console.error("Server Error Response:", errorMsg);
+                    throw new Error("السيرفر لم يستجب بشكل صحيح");
+                }
 
                 const result = await response.json();
                 if (result.status === 'success') {
-                    alert("تمت إضافة المنتج!");
+                    alert("تمت إضافة المنتج بنجاح!");
                     document.getElementById('productForm').reset();
                     loadProducts();
-                } else { alert("خطأ: " + result.message); }
-            } catch (error) { console.error("خطأ:", error); }
+                } else {
+                    alert("خطأ: " + result.message);
+                }
+            } catch (error) {
+                alert("حدث خطأ، تأكد من رفع الملفات المطلوبة للسيرفر");
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'حفظ المنتج';
+            }
         }
 
         async function deleteProduct(id) {
-            if (confirm('حذف هذا المنتج نهائياً؟')) {
-                const formData = new FormData();
-                formData.append('action', 'delete');
-                formData.append('id', id);
+            if (!confirm('حذف المنتج نهائياً؟')) return;
+            const formData = new FormData();
+            formData.append('action', 'delete');
+            formData.append('id', id);
 
-                const response = await fetch('../backend/manage_products.php', {
-                    method: 'POST',
-                    headers: { 'Authorization': localStorage.getItem('user_token') },
-                    body: formData
-                });
+            const response = await fetch(`${API_BASE}/manage_products.php`, {
+                method: 'POST',
+                headers: { 'Authorization': getAuthHeader() },
+                body: formData
+            });
+            loadProducts();
+        }
 
-                const result = await response.json();
-                if (result.status === 'success') { loadProducts(); }
-            }
+        function prepareUpdate(id, name) {
+            document.getElementById('categoryId').value = id;
+            document.getElementById('categoryName').value = name;
+            document.getElementById('btnSave').innerText = 'حفظ التعديل';
+            document.getElementById('btnCancel').classList.remove('d-none');
+        }
+
+        function resetForm() {
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryName').value = '';
+            document.getElementById('btnSave').innerText = 'إضافة صنف';
+            document.getElementById('btnCancel').classList.add('d-none');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
