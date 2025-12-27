@@ -1,18 +1,10 @@
 <?php
 // backend/AuthStrategy.php
 
-/**
- * Interface AuthStrategy
- * يحدد العقد الذي يجب أن تتبعه جميع استراتيجيات التحقق
- */
 interface AuthStrategy {
     public function verify($token);
 }
 
-/**
- * AdminAuth Strategy
- * استراتيجية خاصة بالتحقق من صلاحيات الأدمن فقط
- */
 class AdminAuth implements AuthStrategy {
     private $jwt;
 
@@ -22,15 +14,11 @@ class AdminAuth implements AuthStrategy {
 
     public function verify($token) {
         $userData = $this->jwt->decodeToken($token);
-        // يجب أن يكون التوكن صالحاً والدور هو Admin
-        return ($userData && isset($userData['role']) && $userData['role'] === 'Admin');
+        // التحقق باستخدام strtolower لضمان عدم حدوث خطأ بسبب حالة الأحرف
+        return ($userData && isset($userData['role']) && strtolower($userData['role']) === 'admin');
     }
 }
 
-/**
- * CustomerAuth Strategy
- * استراتيجية خاصة بالتحقق من الزبائن العاديين
- */
 class CustomerAuth implements AuthStrategy {
     private $jwt;
 
@@ -40,15 +28,10 @@ class CustomerAuth implements AuthStrategy {
 
     public function verify($token) {
         $userData = $this->jwt->decodeToken($token);
-        // يكفي أن يكون التوكن صالحاً (سواء زبون أو أدمن حسب منطق متجرك)
         return ($userData !== null);
     }
 }
 
-/**
- * AuthContext
- * الكلاس المسؤول عن تنفيذ الاستراتيجية المختارة دون التدخل في تفاصيلها
- */
 class AuthContext {
     private $strategy;
 
@@ -57,6 +40,8 @@ class AuthContext {
     }
 
     public function authenticate($token) {
-        return $this->strategy->verify($token);
+        // تنظيف التوكن من كلمة Bearer قبل إرساله للتحقق
+        $cleanToken = str_replace('Bearer ', '', $token);
+        return $this->strategy->verify($cleanToken);
     }
 }
