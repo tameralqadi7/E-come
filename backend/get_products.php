@@ -1,32 +1,36 @@
 <?php
-// 1. تفعيل الأخطاء لنعرف إذا كان الـ require هو سبب الـ 500
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// 1. منع تداخل أي أخطاء نصية مع بيانات JSON
+error_reporting(0);
+ini_set('display_errors', 0);
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-// 2. استخدام المسار المطلق لضمان العثور على ملف Database.php
-// __DIR__ تجعل السيرفر يبحث داخل مجلد backend الحالي
-$db_file = __DIR__ . '/config/Database.php';
+// 2. حل ذكي لمشكلة المسارات (يبحث في config أو المجلد الحالي)
+$base_dir = __DIR__;
+$db_path = $base_dir . '/Database.php';
 
-if (file_exists($db_file)) {
-    require_once $db_file;
+if (!file_exists($db_path)) {
+    $db_path = $base_dir . '/Database.php';
+}
+
+if (file_exists($db_path)) {
+    require_once $db_path;
 } else {
-    // إذا لم يجد الملف، سيعطيك هذه الرسالة بدلاً من انهيار السيرفر
-    die(json_encode(["status" => "error", "message" => "لم يتم العثور على ملف Database.php في المسار: " . $db_file]));
+    http_response_code(500);
+    die(json_encode(["status" => "error", "message" => "Database.php not found in backend or backend/config"]));
 }
 
 try {
-    // 3. إنشاء كائن قاعدة البيانات كما هو معرف في ملفك Database.php
     $database = new Database();
     $db = $database->getConnection();
 
     if (!$db) {
-        throw new Exception("فشل الحصول على اتصال من getConnection()");
+        throw new Exception("الاتصال بقاعدة البيانات مقطوع");
     }
 
-    $query = "SELECT p.*, c.name as category_name 
+    // 3. جلب المنتجات مع اسم الصنف الخاص بها
+    $query = "SELECT p.id, p.name, p.description, p.price, p.image_url, c.name as category_name 
               FROM products p 
               LEFT JOIN categories c ON p.category_id = c.id 
               ORDER BY p.id DESC";
@@ -35,13 +39,14 @@ try {
     $stmt->execute();
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // 4. إرسال البيانات (حتى لو كانت المصفوفة فارغة [])
     echo json_encode($products);
 
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
         "status" => "error", 
-        "message" => "خطأ في قاعدة البيانات: " . $e->getMessage()
+        "message" => "خطأ: " . $e->getMessage()
     ]);
 }
 ?>
