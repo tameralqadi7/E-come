@@ -209,7 +209,7 @@
         async function deleteCategory(id) {
             if (!confirm('حذف الصنف؟ سيؤدي ذلك لإزالة ارتباط المنتجات به.')) return;
             try {
-                const response = await fetch(`${API_BASE}/manage_categories.php`, {
+                await fetch(`${API_BASE}/manage_categories.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -221,7 +221,7 @@
             } catch (e) { console.error("Error deleting category"); }
         }
 
-        // --- إدارة المنتجات (تعديل مسار الصور هنا) ---
+        // --- إدارة المنتجات ---
         async function loadProducts() {
             try {
                 const response = await fetch(`${API_BASE}/get_products.php`);
@@ -230,13 +230,13 @@
                 tableBody.innerHTML = '';
 
                 products.forEach(prod => {
-                    // حل مشكلة المسار: تنظيف المسار من أي لواحق زائدة
-                    let cleanPath = prod.image_url ? prod.image_url.replace('../uploads/', '').replace('uploads/', '') : '';
+                    // تصحيح المسار: حذف '../backend/' و 'backend/' ليبقى المسار يبدأ بـ uploads/
+                    let cleanPath = prod.image_url
+                        ? prod.image_url.replace('../backend/', '').replace('backend/', '')
+                        : '';
 
-                    // بما أن صفحة الأدمن غالباً في مجلد بجانب uploads، نرجع خطوة للخلف للوصول للجذر
-                    const imgPath = cleanPath
-                        ? `../${cleanPath}`
-                        : 'https://via.placeholder.com/50';
+                    // بما أن admin.html داخل مجلد (مثلاً frontend)، نخرج خطوة واحدة للوصول لمجلد uploads في الجذر
+                    const imgPath = cleanPath ? `../${cleanPath}` : 'https://via.placeholder.com/50';
 
                     tableBody.innerHTML += `
                         <tr>

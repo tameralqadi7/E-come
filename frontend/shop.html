@@ -78,6 +78,7 @@
         }
     </style>
     <script>
+        // حماية الصفحة: إذا لم يوجد توكن، ارجع لصفحة اللوجن
         if (!localStorage.getItem('user_token')) {
             window.location.href = 'login.html';
         }
@@ -113,7 +114,7 @@
             const container = document.getElementById('productsContainer');
 
             try {
-                // جلب المنتجات من مجلد الباك اند
+                // جلب البيانات من مسار نسبي لضمان عمل الـ CI/CD بنجاح
                 const response = await fetch('backend/get_products.php');
                 if (!response.ok) throw new Error("فشل السيرفر في الاستجابة");
 
@@ -128,15 +129,13 @@
                 products.forEach(prod => {
                     // --- تعديل المسار بناءً على هيكل مشروعك (uploads في الجذر) ---
 
-                    // 1. تنظيف المسار من أي إشارات قديمة لـ backend لضمان البداية من uploads/
+                    // 1. تنظيف المسار ليبقى فقط uploads/filename.jpg
                     let cleanPath = prod.image_url
-                        ? prod.image_url.replace('../uploads/', '').replace('uploads/', '')
+                        ? prod.image_url.replace('../backend/', '').replace('backend/', '')
                         : '';
 
-                    // 2. بما أن uploads في المجلد الرئيسي، نطلبها مباشرة من الـ Origin
-                    const imgUrl = cleanPath
-                        ? `${window.location.origin}/${cleanPath}`
-                        : 'https://via.placeholder.com/400x300?text=No+Image';
+                    // 2. الرابط النهائي: نضعه كما هو لأن المتصفح سيفهمه كمسار نسبي من الدومين
+                    const imgUrl = cleanPath ? cleanPath : 'https://via.placeholder.com/400x300?text=No+Image';
 
                     productsHTML += `
                         <div class="col">
@@ -168,7 +167,7 @@
 
             } catch (error) {
                 console.error("Fetch Error:", error);
-                container.innerHTML = `<div class="col-12 text-center mt-5"><div class="alert alert-danger">حدث خطأ في الاتصال!</div></div>`;
+                container.innerHTML = `<div class="col-12 text-center mt-5"><div class="alert alert-danger">حدث خطأ في الاتصال بالسيرفر!</div></div>`;
             }
         }
 
@@ -181,6 +180,7 @@
             window.location.href = 'login.html';
         }
 
+        // تشغيل الدالة عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', fetchShopProducts);
     </script>
 </body>
