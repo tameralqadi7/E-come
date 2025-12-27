@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // 2. استخدام المسار المطلق للملفات المطلوبة
-require_once __DIR__ . '/config/Database.php';
+require_once __DIR__ . 'Database.php';
 require_once __DIR__ . '/JWTHandler.php';
 
 try {
