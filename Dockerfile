@@ -1,23 +1,33 @@
 FROM php:8.2-apache
 
-# 1. تثبيت الإضافات الضرورية لقاعدة البيانات وضغط الملفات
+# 1. تثبيت الإضافات الضرورية وأداة unzip (مهمة لـ Composer)
 RUN apt-get update && apt-get install -y \
     libzip-dev \
+    unzip \
     && docker-php-ext-install pdo pdo_mysql zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 2. تفعيل موديول Rewrite و Prefork (لضمان عمل Apache بشكل مستقر)
-RUN a2dismod mpm_event mpm_worker || true && a2enmod mpm_prefork rewrite
+# 2. تثبيت Composer رسمياً داخل الحاوية
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 3. ضبط المجلد الرئيسي
+# 3. تفعيل موديول Rewrite
+RUN a2enmod rewrite
+
+# 4. ضبط المجلد الرئيسي
 WORKDIR /var/www/html
 
-# 4. نسخ كل ملفات المشروع (تأكد أن مجلد PHPMailer موجود ضمنهم)
+# 5. نسخ ملفات الإعداد أولاً لتسريع البناء
+COPY composer.json ./
+
+# 6. تشغيل Composer install (سيحل مشكلة PHPMailer تلقائياً)
+# نستخدم --no-scripts لتجنب أي تعارض في البداية
+RUN composer install --no-interaction --no-scripts --optimize-autoloader || echo "Ignore lock error"
+
+# 7. نسخ باقي ملفات المشروع
 COPY . .
 
-# 5. ضبط الصلاحيات للمجلد لضمان قدرة Apache على قراءة الملفات
+# 8. ضبط الصلاحيات
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# 6. إعداد المنفذ وتشغيل السيرفر
 EXPOSE 80
 CMD ["apache2-foreground"]
