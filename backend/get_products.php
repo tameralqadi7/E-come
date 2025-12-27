@@ -1,23 +1,31 @@
 <?php
-// إعدادات عرض الأخطاء مؤقتاً لنعرف السبب الحقيقي إذا فشل
+// 1. تفعيل الأخطاء لنعرف إذا كان الـ require هو سبب الـ 500
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-// --- بيانات قاعدة البيانات (اكتبها هنا مباشرة للتأكد) ---
-$host     = 'اكتب_هنا_host_قاعدة_بياناتك'; // مثال: tidb-cloud-sql...
-$db_name  = 'اكتب_هنا_اسم_القاعدة';
-$username = 'اكتب_هنا_اسم_المستخدم';
-$password = 'اكتب_هنا_كلمة_المرور';
+// 2. استخدام المسار المطلق لضمان العثور على ملف Database.php
+// __DIR__ تجعل السيرفر يبحث داخل مجلد backend الحالي
+$db_file = __DIR__ . '/config/Database.php';
+
+if (file_exists($db_file)) {
+    require_once $db_file;
+} else {
+    // إذا لم يجد الملف، سيعطيك هذه الرسالة بدلاً من انهيار السيرفر
+    die(json_encode(["status" => "error", "message" => "لم يتم العثور على ملف Database.php في المسار: " . $db_file]));
+}
 
 try {
-    // الاتصال بقاعدة البيانات
-    $db = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8", $username, $password);
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // 3. إنشاء كائن قاعدة البيانات كما هو معرف في ملفك Database.php
+    $database = new Database();
+    $db = $database->getConnection();
 
-    // استعلام جلب المنتجات
+    if (!$db) {
+        throw new Exception("فشل الحصول على اتصال من getConnection()");
+    }
+
     $query = "SELECT p.*, c.name as category_name 
               FROM products p 
               LEFT JOIN categories c ON p.category_id = c.id 
@@ -27,15 +35,13 @@ try {
     $stmt->execute();
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // إرسال البيانات
     echo json_encode($products);
 
 } catch (Exception $e) {
     http_response_code(500);
-    // سيطبع لك السبب الحقيقي للخطأ (مثل: Access denied أو Table not found)
     echo json_encode([
-        "status" => "error",
-        "message" => $e->getMessage()
+        "status" => "error", 
+        "message" => "خطأ في قاعدة البيانات: " . $e->getMessage()
     ]);
 }
 ?>
