@@ -78,7 +78,6 @@
         }
     </style>
     <script>
-        // حماية الصفحة: التأكد من وجود التوكن
         if (!localStorage.getItem('user_token')) {
             window.location.href = 'login.html';
         }
@@ -114,82 +113,67 @@
             const container = document.getElementById('productsContainer');
 
             try {
-                // استخدام مسار نسبي لضمان التوافق مع Render وتجنب أخطاء الجذر
-                const response = await fetch('../backend/get_products.php');
-
+                // جلب المنتجات من مجلد الباك اند
+                const response = await fetch('backend/get_products.php');
                 if (!response.ok) throw new Error("فشل السيرفر في الاستجابة");
 
                 const products = await response.json();
 
                 if (!Array.isArray(products) || products.length === 0) {
-                    container.innerHTML = `
-                        <div class="col-12 text-center mt-5">
-                            <div class="p-5 bg-white rounded-4 shadow-sm">
-                                <h3 class="text-muted">المتجر فارغ حالياً 📦</h3>
-                                <p>يتم إضافة منتجات جديدة قريباً، انتظرونا!</p>
-                            </div>
-                        </div>`;
+                    container.innerHTML = `<div class="col-12 text-center mt-5"><h3 class="text-muted">المتجر فارغ حالياً 📦</h3></div>`;
                     return;
                 }
 
                 let productsHTML = '';
                 products.forEach(prod => {
-                    // --- حل مشكلة الصور النهائي والذكي ---
+                    // --- تعديل المسار بناءً على هيكل مشروعك (uploads في الجذر) ---
 
-                    // 1. تنظيف المسار من أي إضافات قديمة (نحذف backend/ أو ../backend/ إذا وُجدت)
-                    let cleanPath = prod.image_url ? prod.image_url.replace('../backend/', '').replace('backend/', '') : '';
+                    // 1. تنظيف المسار من أي إشارات قديمة لـ backend لضمان البداية من uploads/
+                    let cleanPath = prod.image_url
+                        ? prod.image_url.replace('../backend/', '').replace('backend/', '')
+                        : '';
 
-                    // 2. بناء المسار الصحيح للكاستمر: الدخول لمجلد backend مباشرة من الجذر
-                    // ملاحظة: إذا كانت صفحة الكاستمر داخل مجلد frontend، استخدم: `../backend/${cleanPath}`
-                    // أما إذا كانت في المجلد الرئيسي (وهو الأرجح)، استخدم: `backend/${cleanPath}`
+                    // 2. بما أن uploads في المجلد الرئيسي، نطلبها مباشرة من الـ Origin
                     const imgUrl = cleanPath
-                        ? `backend/${cleanPath}`
+                        ? `${window.location.origin}/${cleanPath}`
                         : 'https://via.placeholder.com/400x300?text=No+Image';
 
                     productsHTML += `
-        <div class="col">
-            <div class="card h-100 shadow-sm product-card">
-                <div class="product-img-container">
-                    <span class="badge-category">${prod.category_name || 'عام'}</span>
-                    <img src="${imgUrl}" 
-                         class="product-img" 
-                         alt="${prod.name}"
-                         onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
-                </div>
-                <div class="card-body d-flex flex-column p-4">
-                    <h5 class="card-title fw-bold text-dark mb-2">${prod.name}</h5>
-                    <p class="card-text text-muted small flex-grow-1">
-                        ${prod.description ? prod.description : 'لا يوجد وصف متاح.'}
-                    </p>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <span class="price-tag">$${parseFloat(prod.price).toLocaleString()}</span>
-                        <button class="btn btn-success btn-add-cart text-white" onclick="addToCart(${prod.id})">
-                            إضافة 🛒
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
+                        <div class="col">
+                            <div class="card h-100 shadow-sm product-card">
+                                <div class="product-img-container">
+                                    <span class="badge-category">${prod.category_name || 'عام'}</span>
+                                    <img src="${imgUrl}" 
+                                         class="product-img" 
+                                         alt="${prod.name}"
+                                         onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
+                                </div>
+                                <div class="card-body d-flex flex-column p-4">
+                                    <h5 class="card-title fw-bold text-dark mb-2">${prod.name}</h5>
+                                    <p class="card-text text-muted small flex-grow-1">
+                                        ${prod.description ? prod.description : 'لا يوجد وصف متاح.'}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="price-tag">$${parseFloat(prod.price).toLocaleString()}</span>
+                                        <button class="btn btn-success btn-add-cart text-white" onclick="addToCart(${prod.id})">
+                                            إضافة 🛒
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
                 });
 
                 container.innerHTML = productsHTML;
 
             } catch (error) {
                 console.error("Fetch Error:", error);
-                container.innerHTML = `
-                    <div class="col-12 text-center mt-5">
-                        <div class="alert alert-danger py-4 shadow-sm rounded-4">
-                            <h4 class="fw-bold">حدث خطأ في الاتصال!</h4>
-                            <p>تأكد من تشغيل السيرفر أو فحص اتصال الإنترنت.</p>
-                            <button class="btn btn-outline-danger btn-sm mt-2" onclick="location.reload()">إعادة محاولة</button>
-                        </div>
-                    </div>`;
+                container.innerHTML = `<div class="col-12 text-center mt-5"><div class="alert alert-danger">حدث خطأ في الاتصال!</div></div>`;
             }
         }
 
         function addToCart(productId) {
-            // منطق السلة المستقبلي
-            alert('تم إضافة المنتج رقم ' + productId + ' إلى سلة المشتريات بنجاح!');
+            alert('تم إضافة المنتج رقم ' + productId + ' إلى سلة المشتريات!');
         }
 
         function logout() {
@@ -197,11 +181,8 @@
             window.location.href = 'login.html';
         }
 
-        // بدء الجلب عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', fetchShopProducts);
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
