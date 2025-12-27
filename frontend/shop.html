@@ -130,7 +130,7 @@
 
                     // 1. تنظيف المسار من أي إشارات قديمة لـ backend لضمان البداية من uploads/
                     let cleanPath = prod.image_url
-                        ? prod.image_url.replace('../backend/', '').replace('backend/', '')
+                        ? prod.image_url.replace('../uploads/', '').replace('uploads/', '')
                         : '';
 
                     // 2. بما أن uploads في المجلد الرئيسي، نطلبها مباشرة من الـ Origin

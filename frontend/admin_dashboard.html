@@ -231,7 +231,7 @@
 
                 products.forEach(prod => {
                     // حل مشكلة المسار: تنظيف المسار من أي لواحق زائدة
-                    let cleanPath = prod.image_url ? prod.image_url.replace('../backend/', '').replace('backend/', '') : '';
+                    let cleanPath = prod.image_url ? prod.image_url.replace('../uploads/', '').replace('uploads/', '') : '';
 
                     // بما أن صفحة الأدمن غالباً في مجلد بجانب uploads، نرجع خطوة للخلف للوصول للجذر
                     const imgPath = cleanPath
