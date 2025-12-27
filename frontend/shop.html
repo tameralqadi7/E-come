@@ -33,7 +33,7 @@
         }
     </style>
     <script>
-        // التحقق من تسجيل الدخول قبل تحميل الصفحة
+        // التحقق من تسجيل الدخول
         if (!localStorage.getItem('user_token')) {
             window.location.href = 'login.html';
         }
@@ -58,7 +58,7 @@
         </div>
 
         <div id="productsContainer" class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-            <div class="col-12 text-center">
+            <div class="col-12 text-center" id="loader">
                 <div class="spinner-border text-primary" role="status"></div>
                 <p class="mt-2">جاري تحميل المنتجات...</p>
             </div>
@@ -66,33 +66,33 @@
     </div>
 
     <script>
-        // دالة جلب المنتجات من السيرفر وعرضها
         async function fetchShopProducts() {
+            const container = document.getElementById('productsContainer');
             try {
-                const response = await fetch('../backend/get_products.php');
+                // تعديل المسار ليكون مطلقاً من الجذر لضمان الوصول إليه في Render
+                const response = await fetch('/backend/get_products.php');
 
-                // التأكد من نجاح الطلب
-                if (!response.ok) throw new Error('فشل الاتصال بالسيرفر');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const products = await response.json();
-                const container = document.getElementById('productsContainer');
 
-                if (products.length === 0) {
+                if (!Array.isArray(products) || products.length === 0) {
                     container.innerHTML = '<div class="col-12 text-center"><p class="alert alert-warning">لا توجد منتجات معروضة حالياً.</p></div>';
                     return;
                 }
 
-                let productsHTML = ''; // تجميع الكود هنا لتحسين الأداء
-
+                let productsHTML = '';
                 products.forEach(prod => {
-                    // تصحيح صياغة مسار الصورة باستخدام ` (Backticks)
-                    const imgPath = prod.image_url ? `../backend/${prod.image_url}` : 'https://via.placeholder.com/300x200?text=No+Image';
+                    // تصحيح مسار الصور
+                    const imgPath = prod.image_url ? `/backend/${prod.image_url}` : 'https://via.placeholder.com/300x200?text=No+Image';
 
                     productsHTML += `
                         <div class="col">
                             <div class="card h-100 shadow-sm product-card">
                                 <span class="badge badge-category shadow-sm">${prod.category_name || 'عام'}</span>
-                                <img src="${imgPath}" class="card-img-top product-img" alt="${prod.name}">
+                                <img src="${imgPath}" class="card-img-top product-img" alt="${prod.name}" onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading+Image'">
                                 <div class="card-body text-center d-flex flex-column">
                                     <h5 class="card-title fw-bold">${prod.name}</h5>
                                     <p class="card-text text-muted small text-truncate">${prod.description || 'لا يوجد وصف'}</p>
@@ -111,23 +111,26 @@
                 container.innerHTML = productsHTML;
             } catch (error) {
                 console.error("Error fetching products:", error);
-                document.getElementById('productsContainer').innerHTML =
-                    '<div class="col-12 text-center"><p class="alert alert-danger">حدث خطأ أثناء تحميل البيانات. تأكد من اتصال السيرفر.</p></div>';
+                container.innerHTML = `
+                    <div class="col-12 text-center">
+                        <p class="alert alert-danger">
+                            حدث خطأ أثناء تحميل البيانات. <br>
+                            <small>${error.message}</small>
+                        </p>
+                        <button class="btn btn-primary btn-sm" onclick="location.reload()">إعادة محاولة</button>
+                    </div>`;
             }
         }
 
-        // دالة تسجيل الخروج
         function logout() {
             localStorage.removeItem('user_token');
             window.location.href = 'login.html';
         }
 
-        // دالة تجريبية للإضافة للسلة
         function addToCart(productId) {
             alert('تم إضافة المنتج رقم ' + productId + ' إلى السلة!');
         }
 
-        // تشغيل الجلب عند تحميل الصفحة بالكامل
         document.addEventListener('DOMContentLoaded', fetchShopProducts);
     </script>
 
