@@ -134,39 +134,42 @@
 
                 let productsHTML = '';
                 products.forEach(prod => {
-                    // --- حل مشكلة الصور الجذري ---
-                    // 1. تنظيف المسار من كلمة backend/ إذا كانت موجودة لكي لا تتكرر
-                    let cleanPath = prod.image_url ? prod.image_url.replace('backend/', '') : '';
+                    // --- حل مشكلة الصور النهائي والذكي ---
 
-                    // 2. بناء المسار النهائي (الرجوع خطوة للخلف من frontend ثم الدخول لـ backend)
+                    // 1. تنظيف المسار من أي إضافات قديمة (نحذف backend/ أو ../backend/ إذا وُجدت)
+                    let cleanPath = prod.image_url ? prod.image_url.replace('../backend/', '').replace('backend/', '') : '';
+
+                    // 2. بناء المسار الصحيح للكاستمر: الدخول لمجلد backend مباشرة من الجذر
+                    // ملاحظة: إذا كانت صفحة الكاستمر داخل مجلد frontend، استخدم: `../backend/${cleanPath}`
+                    // أما إذا كانت في المجلد الرئيسي (وهو الأرجح)، استخدم: `backend/${cleanPath}`
                     const imgUrl = cleanPath
-                        ? `../backend/${cleanPath}`
-                        : 'https://via.placeholder.com/400x300?text=No+Image+Available';
+                        ? `backend/${cleanPath}`
+                        : 'https://via.placeholder.com/400x300?text=No+Image';
 
                     productsHTML += `
-                        <div class="col">
-                            <div class="card h-100 shadow-sm product-card">
-                                <div class="product-img-container">
-                                    <span class="badge-category">${prod.category_name || 'غير مصنف'}</span>
-                                    <img src="${imgUrl}" 
-                                         class="product-img" 
-                                         alt="${prod.name}"
-                                         onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
-                                </div>
-                                <div class="card-body d-flex flex-column p-4">
-                                    <h5 class="card-title fw-bold text-dark mb-2">${prod.name}</h5>
-                                    <p class="card-text text-muted small flex-grow-1">
-                                        ${prod.description ? prod.description : 'لا يوجد وصف متاح لهذا المنتج حالياً.'}
-                                    </p>
-                                    <div class="d-flex justify-content-between align-items-center mt-3">
-                                        <span class="price-tag">$${parseFloat(prod.price).toLocaleString()}</span>
-                                        <button class="btn btn-success btn-add-cart text-white" onclick="addToCart(${prod.id})">
-                                            إضافة 🛒
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
+        <div class="col">
+            <div class="card h-100 shadow-sm product-card">
+                <div class="product-img-container">
+                    <span class="badge-category">${prod.category_name || 'عام'}</span>
+                    <img src="${imgUrl}" 
+                         class="product-img" 
+                         alt="${prod.name}"
+                         onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
+                </div>
+                <div class="card-body d-flex flex-column p-4">
+                    <h5 class="card-title fw-bold text-dark mb-2">${prod.name}</h5>
+                    <p class="card-text text-muted small flex-grow-1">
+                        ${prod.description ? prod.description : 'لا يوجد وصف متاح.'}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="price-tag">$${parseFloat(prod.price).toLocaleString()}</span>
+                        <button class="btn btn-success btn-add-cart text-white" onclick="addToCart(${prod.id})">
+                            إضافة 🛒
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
                 });
 
                 container.innerHTML = productsHTML;

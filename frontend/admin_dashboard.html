@@ -208,17 +208,17 @@
                 tableBody.innerHTML = '';
 
                 products.forEach(prod => {
-                    const imgPath = prod.image_url ? `${API_BASE}/${prod.image_url.replace('backend/', '')}` : 'https://via.placeholder.com/60';
+                    // هذه الدالة ستضمن أن الرابط يبدأ دائماً بـ ../backend/
+                    let rawPath = prod.image_url || '';
+                    let cleanPath = rawPath.replace('../backend/', '').replace('backend/', '');
+                    const imgPath = `../backend/${cleanPath}`;
+
                     tableBody.innerHTML += `
-                        <tr>
-                            <td><img src="${imgPath}" class="product-img-preview border"></td>
+                         <tr>
+                            <td><img src="${imgPath}" class="product-img-preview border shadow-sm" onerror="this.src='https://via.placeholder.com/50'"></td>
                             <td><strong>${prod.name}</strong></td>
-                            <td><span class="badge bg-info text-dark">${prod.category_name}</span></td>
-                            <td>$${prod.price}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${prod.id})">حذف</button>
-                            </td>
-                        </tr>`;
+                             ...
+                            </tr>`;
                 });
             } catch (e) { console.error("Error loading products"); }
         }
