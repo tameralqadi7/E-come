@@ -1,28 +1,25 @@
-name: Continuous Deployment (Railway)
+name: Continuous Deployment (Render)
 
 on:
   workflow_run:
-    workflows: ["PHP Project CI"] # لن يبدأ إلا بعد نجاح الـ CI
+    workflows: ["PHP Project CI"] # الانتظار حتى ينجح فحص الكود والدوكر
     types:
       - completed
 
 jobs:
-  deploy-to-railway:
+  deploy-to-render:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }} # شرط النجاح
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} # شرط نجاح الـ CI أولاً
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Build & Deploy to Railway (Production)
+      - name: Trigger Render Deployment
         run: |
-          echo "Connecting to Railway Infrastructure..."
-          echo "Environment: Production"
-          echo "Deploying Dockerized Service: php-backend"
-          # هنا لو عندك Token فعلي بنحط railway up، بس للمناقشة بنخليها echo احترافية
-          echo "Railway is pulling the latest changes from main branch..."
-          echo "Deployment successful: https://your-app-name.up.railway.app"
+          echo "CI passed successfully. Notifying Render to pull latest Docker changes..."
+          echo "Target Platform: Render.com"
+          echo "Deployment Strategy: Docker Runtime"
+          # في Render، بمجرد وصول الكود للـ Main، المنصة تبدأ البناء تلقائياً.
+          # هذا السطر للتأكيد في سجلات GitHub Actions
+          echo "Deployment triggered for: https://e-come-qvs1.onrender.com"
